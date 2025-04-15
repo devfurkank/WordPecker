@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,7 +7,14 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, error } = useAuth();
+  const { login, authState } = useAuth();
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      navigation.navigate('Main');
+    }
+  }, [authState.isAuthenticated, authState.user, navigation]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -19,8 +26,11 @@ const LoginScreen = ({ navigation }) => {
       setIsLoading(true);
       await login(email, password);
       // Navigation will be handled by the auth state listener in AuthContext
+      if (!authState.error) {
+        navigation.navigate('Main');
+      }
     } catch (error) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Login Failed', error.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }
@@ -76,12 +86,16 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
+            {authState.error && (
+              <Text style={styles.errorText}>{authState.error}</Text>
+            )}
+
             <TouchableOpacity
               style={styles.loginButton}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={isLoading || authState.isLoading}
             >
-              {isLoading ? (
+              {(isLoading || authState.isLoading) ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.loginButtonText}>Login</Text>
@@ -172,6 +186,10 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: '#5048E5',
     fontSize: 14,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
   loginButton: {
     backgroundColor: '#5048E5',

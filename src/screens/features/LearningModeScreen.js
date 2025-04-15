@@ -6,7 +6,7 @@ import { useWord } from '../../context/WordContext';
 import { useList } from '../../context/ListContext';
 
 const LearningModeScreen = ({ route, navigation }) => {
-  const { listId, listName } = route.params;
+  const { listId, listName } = route.params || {};
   const { words, loading, fetchWords, updateWordProgress } = useWord();
   const { updateList } = useList();
   
@@ -16,18 +16,25 @@ const LearningModeScreen = ({ route, navigation }) => {
   const [learningComplete, setLearningComplete] = useState(false);
   const [learnedWords, setLearnedWords] = useState(0);
   
+  // Safely get filtered words
+  const learningWords = words || [];
+  
   useEffect(() => {
-    fetchWords(listId);
+    if (listId) {
+      fetchWords(listId);
+    }
   }, [listId]);
   
   useEffect(() => {
-    if (words.length > 0 && currentIndex >= words.length) {
+    if (learningWords.length > 0 && currentIndex >= learningWords.length) {
       setLearningComplete(true);
       updateListProgress();
     }
-  }, [currentIndex, words]);
+  }, [currentIndex, learningWords]);
   
   const updateListProgress = async () => {
+    if (!listId) return;
+    
     try {
       await updateList(listId, {
         progress: {
@@ -41,42 +48,51 @@ const LearningModeScreen = ({ route, navigation }) => {
   };
   
   const handleKnowWord = async () => {
-    if (currentIndex < words.length) {
-      const currentWord = words[currentIndex];
+    if (!learningWords || currentIndex >= learningWords.length) return;
+    
+    const currentWord = learningWords[currentIndex];
+    if (!currentWord) return;
+    
+    try {
+      // Update word progress
+      const newProgress = {
+        ...(currentWord.progress || {}),
+        learned: true,
+        lastReviewed: new Date().toISOString(),
+        reviewCount: (currentWord.progress?.reviewCount || 0) + 1,
+        correctCount: (currentWord.progress?.correctCount || 0) + 1
+      };
       
-      try {
-        // Update word progress
-        const newProgress = {
-          ...currentWord.progress,
-          learned: true,
-          lastReviewed: new Date().toISOString(),
-          reviewCount: (currentWord.progress?.reviewCount || 0) + 1,
-          correctCount: (currentWord.progress?.correctCount || 0) + 1
-        };
-        
-        await updateWordProgress(currentWord.id, newProgress);
-        
-        // Update learned words count
-        if (!currentWord.progress?.learned) {
-          setLearnedWords(prev => prev + 1);
-        }
-      } catch (error) {
-        console.error('Error updating word progress:', error);
+      await updateWordProgress(currentWord.id, newProgress);
+      
+      // Update learned words count
+      if (!currentWord.progress?.learned) {
+        setLearnedWords(prev => prev + 1);
       }
-      
-      // Move to next word
-      setCurrentIndex(prev => prev + 1);
-      setShowMeaning(false);
-      setSessionProgress(Math.round(((currentIndex + 1) / words.length) * 100));
+    } catch (error) {
+      console.error('Error updating word progress:', error);
+    }
+    
+    // Move to next word
+    setCurrentIndex(prev => prev + 1);
+    setShowMeaning(false);
+    
+    // Update progress safely
+    if (learningWords.length > 0) {
+      setSessionProgress(Math.round(((currentIndex + 1) / learningWords.length) * 100));
     }
   };
   
   const handleStillLearningWord = () => {
-    if (currentIndex < words.length) {
-      // Move to next word without marking as learned
-      setCurrentIndex(prev => prev + 1);
-      setShowMeaning(false);
-      setSessionProgress(Math.round(((currentIndex + 1) / words.length) * 100));
+    if (!learningWords || currentIndex >= learningWords.length) return;
+    
+    // Move to next word without marking as learned
+    setCurrentIndex(prev => prev + 1);
+    setShowMeaning(false);
+    
+    // Update progress safely
+    if (learningWords.length > 0) {
+      setSessionProgress(Math.round(((currentIndex + 1) / learningWords.length) * 100));
     }
   };
   
@@ -101,7 +117,7 @@ const LearningModeScreen = ({ route, navigation }) => {
     );
   }
   
-  if (words.length === 0) {
+  if (!learningWords || learningWords.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
@@ -130,7 +146,7 @@ const LearningModeScreen = ({ route, navigation }) => {
           />
           <Text style={styles.completeTitle}>Learning Complete!</Text>
           <Text style={styles.completeStats}>
-            You've reviewed {words.length} words
+            You've reviewed {learningWords.length} words
           </Text>
           <Text style={styles.completeLearnedStats}>
             {learnedWords} words marked as learned
@@ -165,12 +181,50 @@ const LearningModeScreen = ({ route, navigation }) => {
     );
   }
   
-  const currentWord = words[currentIndex];
+  // Safety check to prevent crashes
+  if (currentIndex >= learningWords.length) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={60} color="#e74c3c" />
+          <Text style={styles.emptyText}>Learning Error</Text>
+          <Text style={styles.emptySubtext}>Unable to load current word</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.addButtonText}>Back to List</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
+  const currentWord = learningWords[currentIndex];
+  
+  // Additional safety check
+  if (!currentWord) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={60} color="#e74c3c" />
+          <Text style={styles.emptyText}>Word Error</Text>
+          <Text style={styles.emptySubtext}>Current word data is missing</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.addButtonText}>Back to List</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
   
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Learning: {listName}</Text>
+        <Text style={styles.title}>Learning: {listName || 'Words'}</Text>
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
             <View 
@@ -181,18 +235,18 @@ const LearningModeScreen = ({ route, navigation }) => {
             />
           </View>
           <Text style={styles.progressText}>
-            {currentIndex + 1}/{words.length}
+            {currentIndex + 1}/{learningWords.length}
           </Text>
         </View>
       </View>
       
       <View style={styles.cardContainer}>
         <View style={styles.card}>
-          <Text style={styles.wordText}>{currentWord.word}</Text>
+          <Text style={styles.wordText}>{currentWord.word || 'Unknown Word'}</Text>
           
           {showMeaning ? (
             <View style={styles.meaningContainer}>
-              <Text style={styles.meaningText}>{currentWord.meaning}</Text>
+              <Text style={styles.meaningText}>{currentWord.meaning || 'No meaning provided'}</Text>
               {currentWord.context ? (
                 <Text style={styles.contextText}>"{currentWord.context}"</Text>
               ) : null}

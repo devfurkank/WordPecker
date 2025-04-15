@@ -9,7 +9,7 @@ const RegisterScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register, error } = useAuth();
+  const { register, authState } = useAuth();
 
   const handleRegister = async () => {
     if (!displayName || !email || !password || !confirmPassword) {
@@ -31,8 +31,11 @@ const RegisterScreen = ({ navigation }) => {
       setIsLoading(true);
       await register(email, password, displayName);
       // Navigation will be handled by the auth state listener in AuthContext
+      if (!authState.error) {
+        navigation.navigate('Main');
+      }
     } catch (error) {
-      Alert.alert('Registration Failed', error.message);
+      Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
     } finally {
       setIsLoading(false);
     }
@@ -103,12 +106,16 @@ const RegisterScreen = ({ navigation }) => {
               />
             </View>
 
+            {authState.error && (
+              <Text style={styles.errorText}>{authState.error}</Text>
+            )}
+
             <TouchableOpacity
               style={styles.registerButton}
               onPress={handleRegister}
-              disabled={isLoading}
+              disabled={isLoading || authState.isLoading}
             >
-              {isLoading ? (
+              {(isLoading || authState.isLoading) ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.registerButtonText}>Register</Text>
@@ -191,6 +198,10 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
   registerButton: {
     backgroundColor: '#5048E5',

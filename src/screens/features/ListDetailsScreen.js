@@ -12,10 +12,17 @@ const ListDetailsScreen = ({ route, navigation }) => {
   const { lists, fetchLists, updateList, deleteList } = useList();
 
   useEffect(() => {
-    fetchWords(listId);
-    const currentList = lists.find(l => l.id === listId);
-    if (currentList) {
-      setList(currentList);
+    // Fetch words for this specific list
+    if (listId) {
+      fetchWords(listId);
+    }
+    
+    // Find the current list from lists
+    if (lists && listId) {
+      const currentList = lists.find(l => l.id === listId);
+      if (currentList) {
+        setList(currentList);
+      }
     }
   }, [listId, lists]);
 
@@ -113,6 +120,9 @@ const ListDetailsScreen = ({ route, navigation }) => {
     );
   }
 
+  // Ensure words is an array
+  const wordsList = words || [];
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -121,7 +131,7 @@ const ListDetailsScreen = ({ route, navigation }) => {
         
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{words.length}</Text>
+            <Text style={styles.statValue}>{wordsList.length}</Text>
             <Text style={styles.statLabel}>Words</Text>
           </View>
           
@@ -134,8 +144,8 @@ const ListDetailsScreen = ({ route, navigation }) => {
           
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
-              {words.length > 0 
-                ? Math.round(((list.progress?.learnedWords || 0) / words.length) * 100) 
+              {wordsList.length > 0 
+                ? Math.round(((list.progress?.learnedWords || 0) / wordsList.length) * 100) 
                 : 0}%
             </Text>
             <Text style={styles.statLabel}>Progress</Text>
@@ -172,7 +182,7 @@ const ListDetailsScreen = ({ route, navigation }) => {
       <View style={styles.wordsContainer}>
         <View style={styles.wordsHeader}>
           <Text style={styles.wordsTitle}>Words</Text>
-          <Text style={styles.wordsCount}>{words.length} total</Text>
+          <Text style={styles.wordsCount}>{wordsList.length} total</Text>
         </View>
 
         {loading ? (
@@ -182,7 +192,7 @@ const ListDetailsScreen = ({ route, navigation }) => {
           </View>
         ) : (
           <FlatList
-            data={words}
+            data={wordsList}
             renderItem={renderWordItem}
             keyExtractor={(item) => item.id}
             ListEmptyComponent={renderEmptyList}

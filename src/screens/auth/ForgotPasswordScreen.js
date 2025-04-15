@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../firebase/config';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
-  const { resetPassword } = useAuth();
+  const [error, setError] = useState('');
+  const { authState } = useAuth();
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -17,10 +20,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      await resetPassword(email);
+      setError('');
+      // Using Firebase directly since resetPassword is not exposed in the updated context
+      await sendPasswordResetEmail(auth, email);
       setIsEmailSent(true);
     } catch (error) {
-      Alert.alert('Error', error.message);
+      setError(error.message || 'An error occurred while sending reset email');
+      Alert.alert('Error', error.message || 'An error occurred while sending reset email');
     } finally {
       setIsLoading(false);
     }
@@ -81,6 +87,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
                     autoCapitalize="none"
                   />
                 </View>
+
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <TouchableOpacity
                   style={styles.resetButton}
@@ -172,6 +180,10 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
   resetButton: {
     backgroundColor: '#5048E5',

@@ -20,11 +20,13 @@ const QuizModeScreen = ({ route, navigation }) => {
   const [sessionProgress, setSessionProgress] = useState(0);
   
   useEffect(() => {
-    fetchWords(listId);
+    if (listId) {
+      fetchWords(listId);
+    }
   }, [listId]);
   
   useEffect(() => {
-    if (words.length > 0) {
+    if (words && words.length > 0) {
       // Prepare quiz words - shuffle the array
       const shuffled = [...words].sort(() => 0.5 - Math.random());
       // Take up to 10 words for the quiz
@@ -49,7 +51,7 @@ const QuizModeScreen = ({ route, navigation }) => {
       // Update last studied timestamp
       await updateList(listId, {
         progress: {
-          ...words.progress,
+          ...(words?.progress || {}),
           lastStudied: new Date().toISOString()
         }
       });
@@ -59,13 +61,14 @@ const QuizModeScreen = ({ route, navigation }) => {
   };
   
   const generateOptions = (wordsList, index) => {
-    if (wordsList.length === 0) return;
+    if (!wordsList || wordsList.length === 0 || index >= wordsList.length) return;
     
     const correctWord = wordsList[index];
+    if (!correctWord) return;
     
     // Get 3 random incorrect options
     const incorrectOptions = wordsList
-      .filter(word => word.id !== correctWord.id)
+      .filter(word => word && word.id !== correctWord.id)
       .sort(() => 0.5 - Math.random())
       .slice(0, 3)
       .map(word => word.meaning);
@@ -78,7 +81,11 @@ const QuizModeScreen = ({ route, navigation }) => {
   };
   
   const handleSelectOption = (option) => {
+    if (!quizWords || currentIndex >= quizWords.length) return;
+    
     const currentWord = quizWords[currentIndex];
+    if (!currentWord) return;
+    
     const correct = option === currentWord.meaning;
     
     setSelectedOption(option);
@@ -89,7 +96,7 @@ const QuizModeScreen = ({ route, navigation }) => {
       
       // Update word progress
       updateWordProgress(currentWord.id, {
-        ...currentWord.progress,
+        ...(currentWord.progress || {}),
         lastReviewed: new Date().toISOString(),
         reviewCount: (currentWord.progress?.reviewCount || 0) + 1,
         correctCount: (currentWord.progress?.correctCount || 0) + 1
@@ -99,7 +106,7 @@ const QuizModeScreen = ({ route, navigation }) => {
     } else {
       // Update word progress without incrementing correctCount
       updateWordProgress(currentWord.id, {
-        ...currentWord.progress,
+        ...(currentWord.progress || {}),
         lastReviewed: new Date().toISOString(),
         reviewCount: (currentWord.progress?.reviewCount || 0) + 1
       }).catch(error => {
@@ -121,6 +128,8 @@ const QuizModeScreen = ({ route, navigation }) => {
   };
   
   const handleRestartQuiz = () => {
+    if (!words || words.length === 0) return;
+    
     // Shuffle words again
     const shuffled = [...words].sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, Math.min(10, shuffled.length));
@@ -147,7 +156,7 @@ const QuizModeScreen = ({ route, navigation }) => {
     );
   }
   
-  if (words.length === 0) {
+  if (!words || words.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
@@ -224,7 +233,45 @@ const QuizModeScreen = ({ route, navigation }) => {
     );
   }
   
+  // Safety check to prevent crashes
+  if (!quizWords || quizWords.length === 0 || currentIndex >= quizWords.length) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={60} color="#e74c3c" />
+          <Text style={styles.emptyText}>Quiz Error</Text>
+          <Text style={styles.emptySubtext}>Unable to load quiz questions</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.addButtonText}>Back to List</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
   const currentWord = quizWords[currentIndex];
+  
+  // Additional safety check
+  if (!currentWord) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={60} color="#e74c3c" />
+          <Text style={styles.emptyText}>Quiz Error</Text>
+          <Text style={styles.emptySubtext}>Unable to load current question</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.addButtonText}>Back to List</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
   
   return (
     <SafeAreaView style={styles.container}>

@@ -11,7 +11,8 @@ export const ListProvider = ({ children }) => {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { currentUser } = useAuth();
+  const { authState } = useAuth();
+  const currentUser = authState.user;
 
   // Fetch all lists for the current user
   const fetchLists = async () => {
@@ -21,7 +22,7 @@ export const ListProvider = ({ children }) => {
       setLoading(true);
       setError('');
       
-      const q = query(collection(db, 'lists'), where('userId', '==', currentUser.uid));
+      const q = query(collection(db, 'lists'), where('userId', '==', currentUser.id));
       const querySnapshot = await getDocs(q);
       
       const listsData = [];
@@ -48,7 +49,7 @@ export const ListProvider = ({ children }) => {
       
       const newList = {
         ...listData,
-        userId: currentUser.uid,
+        userId: currentUser.id,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         wordCount: 0,

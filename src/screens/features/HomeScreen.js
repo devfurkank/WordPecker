@@ -7,7 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 
 const HomeScreen = ({ navigation }) => {
   const { lists, loading, fetchLists, error } = useList();
-  const { currentUser, logout } = useAuth();
+  const { authState, logout } = useAuth();
+  const currentUser = authState.user;
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -102,7 +103,7 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {currentUser?.displayName || 'User'}</Text>
+          <Text style={styles.greeting}>Hello, {currentUser?.name || 'User'}</Text>
           <Text style={styles.subtitle}>Your vocabulary lists</Text>
         </View>
         <TouchableOpacity onPress={handleLogout}>

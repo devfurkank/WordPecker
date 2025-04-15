@@ -11,11 +11,16 @@ export const WordProvider = ({ children }) => {
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { currentUser } = useAuth();
+  const { authState } = useAuth();
+  const currentUser = authState?.user;
 
   // Fetch all words for a specific list
   const fetchWords = async (listId) => {
-    if (!currentUser || !listId) return;
+    if (!currentUser || !listId) {
+      setWords([]);
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -36,6 +41,40 @@ export const WordProvider = ({ children }) => {
     } catch (err) {
       setError(err.message);
       console.error('Error fetching words:', err);
+      setWords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all words for the current user
+  const fetchAllWords = async () => {
+    if (!currentUser) {
+      setWords([]);
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError('');
+      
+      const q = query(collection(db, 'words'), where('userId', '==', currentUser.id));
+      const querySnapshot = await getDocs(q);
+      
+      const wordsData = [];
+      querySnapshot.forEach((doc) => {
+        wordsData.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      setWords(wordsData);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching all words:', err);
+      setWords([]);
     } finally {
       setLoading(false);
     }
@@ -43,13 +82,17 @@ export const WordProvider = ({ children }) => {
 
   // Add a new word to a list
   const addWord = async (listId, wordData) => {
+    if (!currentUser || !listId) {
+      throw new Error('User not authenticated or list ID not provided');
+    }
+    
     try {
       setError('');
       
       const newWord = {
         ...wordData,
         listId,
-        userId: currentUser.uid,
+        userId: currentUser.id,
         createdAt: new Date().toISOString(),
         progress: {
           learned: false,
@@ -81,6 +124,10 @@ export const WordProvider = ({ children }) => {
 
   // Update an existing word
   const updateWord = async (wordId, updatedData) => {
+    if (!wordId) {
+      throw new Error('Word ID not provided');
+    }
+    
     try {
       setError('');
       
@@ -104,6 +151,10 @@ export const WordProvider = ({ children }) => {
 
   // Delete a word
   const deleteWord = async (wordId, listId) => {
+    if (!wordId || !listId) {
+      throw new Error('Word ID or list ID not provided');
+    }
+    
     try {
       setError('');
       
@@ -128,6 +179,10 @@ export const WordProvider = ({ children }) => {
 
   // Update word learning progress
   const updateWordProgress = async (wordId, progressData) => {
+    if (!wordId) {
+      throw new Error('Word ID not provided');
+    }
+    
     try {
       setError('');
       
@@ -151,11 +206,22 @@ export const WordProvider = ({ children }) => {
     }
   };
 
+  // Load initial data
+  useEffect(() => {
+    if (currentUser) {
+      fetchAllWords();
+    } else {
+      setWords([]);
+      setLoading(false);
+    }
+  }, [currentUser]);
+
   const value = {
     words,
     loading,
     error,
     fetchWords,
+    fetchAllWords,
     addWord,
     updateWord,
     deleteWord,
@@ -168,3 +234,5 @@ export const WordProvider = ({ children }) => {
     </WordContext.Provider>
   );
 };
+
+export default WordContext;

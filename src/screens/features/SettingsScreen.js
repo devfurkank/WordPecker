@@ -6,7 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsScreen = ({ navigation }) => {
-  const { currentUser, logout } = useAuth();
+  const { authState, logout } = useAuth();
+  const currentUser = authState.user;
   
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
@@ -104,11 +105,11 @@ const SettingsScreen = ({ navigation }) => {
           <View style={styles.profileContainer}>
             <View style={styles.profileIcon}>
               <Text style={styles.profileInitial}>
-                {currentUser?.displayName ? currentUser.displayName[0].toUpperCase() : 'U'}
+                {currentUser?.name ? currentUser.name[0].toUpperCase() : 'U'}
               </Text>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{currentUser?.displayName || 'User'}</Text>
+              <Text style={styles.profileName}>{currentUser?.name || 'User'}</Text>
               <Text style={styles.profileEmail}>{currentUser?.email || ''}</Text>
             </View>
           </View>
@@ -132,7 +133,10 @@ const SettingsScreen = ({ navigation }) => {
             </View>
             <Switch
               value={darkMode}
-              onValueChange={setDarkMode}
+              onValueChange={(value) => {
+                setDarkMode(value);
+                saveSettings();
+              }}
               trackColor={{ false: '#ddd', true: '#5048E5' }}
               thumbColor="#fff"
             />

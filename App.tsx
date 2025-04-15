@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/context/AuthContext';
+import { ListProvider } from './src/context/ListContext';
+import { WordProvider } from './src/context/WordContext';
 
 // Auth Screens
 import LoginScreen from './src/screens/auth/LoginScreen';
@@ -68,26 +70,30 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-            {/* Auth Screens */}
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-            
-            {/* Main App */}
-            <Stack.Screen name="Main" component={TabNavigator} />
-            
-            {/* Feature Screens */}
-            <Stack.Screen name="AddWords" component={AddWordsScreen} options={{ headerShown: true, title: 'Add Words' }} />
-            <Stack.Screen name="ListDetails" component={ListDetailsScreen} options={{ headerShown: true, title: 'List Details' }} />
-            <Stack.Screen name="LearningMode" component={LearningModeScreen} options={{ headerShown: true, title: 'Learning Mode' }} />
-            <Stack.Screen name="QuizMode" component={QuizModeScreen} options={{ headerShown: true, title: 'Quiz Mode' }} />
-            <Stack.Screen name="InnovativeFeature1" component={InnovativeFeature1Screen} options={{ headerShown: true, title: 'Voice Recognition' }} />
-            <Stack.Screen name="InnovativeFeature2" component={InnovativeFeature2Screen} options={{ headerShown: true, title: 'AR Word Learning' }} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <ListProvider>
+          <WordProvider>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+                {/* Auth Screens */}
+                <Stack.Screen name="Login" component={LoginScreen} />
+                <Stack.Screen name="Register" component={RegisterScreen} />
+                <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                
+                {/* Main App */}
+                <Stack.Screen name="Main" component={TabNavigator} />
+                
+                {/* Feature Screens */}
+                <Stack.Screen name="AddWords" component={AddWordsScreen} options={{ headerShown: true, title: 'Add Words' }} />
+                <Stack.Screen name="ListDetails" component={ListDetailsScreen} options={{ headerShown: true, title: 'List Details' }} />
+                <Stack.Screen name="LearningMode" component={LearningModeScreen} options={{ headerShown: true, title: 'Learning Mode' }} />
+                <Stack.Screen name="QuizMode" component={QuizModeScreen} options={{ headerShown: true, title: 'Quiz Mode' }} />
+                <Stack.Screen name="InnovativeFeature1" component={InnovativeFeature1Screen} options={{ headerShown: true, title: 'Voice Recognition' }} />
+                <Stack.Screen name="InnovativeFeature2" component={InnovativeFeature2Screen} options={{ headerShown: true, title: 'AR Word Learning' }} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </WordProvider>
+        </ListProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

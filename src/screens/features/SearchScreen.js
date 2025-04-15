@@ -7,12 +7,17 @@ import { useWord } from '../../context/WordContext';
 
 const SearchScreen = ({ navigation }) => {
   const { lists, loading: listsLoading } = useList();
-  const { words: allWords, loading: wordsLoading } = useWord();
+  const { words: allWords, loading: wordsLoading, fetchAllWords } = useWord();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'lists', 'words'
+
+  // Fetch all words when component mounts
+  useEffect(() => {
+    fetchAllWords();
+  }, []);
 
   useEffect(() => {
     // Load recent searches from storage
@@ -38,7 +43,7 @@ const SearchScreen = ({ navigation }) => {
     const results = [];
 
     // Search in lists
-    if (activeFilter === 'all' || activeFilter === 'lists') {
+    if ((activeFilter === 'all' || activeFilter === 'lists') && lists) {
       const matchedLists = lists.filter(list => 
         list.name.toLowerCase().includes(query) || 
         (list.description && list.description.toLowerCase().includes(query))
@@ -56,7 +61,7 @@ const SearchScreen = ({ navigation }) => {
     }
 
     // Search in words
-    if (activeFilter === 'all' || activeFilter === 'words') {
+    if ((activeFilter === 'all' || activeFilter === 'words') && allWords) {
       const matchedWords = allWords.filter(word => 
         word.word.toLowerCase().includes(query) || 
         word.meaning.toLowerCase().includes(query) ||
@@ -65,7 +70,7 @@ const SearchScreen = ({ navigation }) => {
 
       matchedWords.forEach(word => {
         // Find the list this word belongs to
-        const parentList = lists.find(list => list.id === word.listId);
+        const parentList = lists ? lists.find(list => list.id === word.listId) : null;
         
         results.push({
           id: word.id,
@@ -215,7 +220,7 @@ const SearchScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {isSearching ? (
+      {isSearching || wordsLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#5048E5" />
           <Text style={styles.loadingText}>Searching...</Text>
