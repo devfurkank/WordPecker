@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "915039129800",
+    "project_id": "wordpecker-furkan",
+    "storage_bucket": "wordpecker-furkan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:915039129800:android:d822765a3d40028bae95fd",
+        "android_client_info": {
+          "package_name": "com.furkankeskin.wordpecker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "915039129800-jog6v45jfio7v9jefstturolorgkpf9p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOn1Yywa_Jx_vcldFSa-Y0Lw-gZHRgd10"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "915039129800-jog6v45jfio7v9jefstturolorgkpf9p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
